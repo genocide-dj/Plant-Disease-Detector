@@ -1,0 +1,10 @@
+flask
+torch
+torchvision
+timm
+opencv-python
+pillow
+numpy
+huggingface-hub
+grad-cam
+gunicorn
