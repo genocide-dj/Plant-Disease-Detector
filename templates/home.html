@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantDoc - AI Plant Disease Detector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7f2; color: #2c3e2d; }
+
+        /* NAVBAR */
+        nav {
+            background: white;
+            padding: 15px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav .logo { 
+            color: #2d7a3a; 
+            font-size: 1.5rem; 
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        nav .nav-links { display: flex; gap: 30px; align-items: center; }
+        nav .nav-links a {
+            color: #555;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        nav .nav-links a:hover { color: #2d7a3a; }
+        nav .nav-links .nav-btn {
+            background: #2d7a3a;
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 25px;
+            transition: background 0.3s !important;
+        }
+        nav .nav-links .nav-btn:hover { background: #1f5a2a !important; }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(135deg, #1a4a2e 0%, #2d7a3a 50%, #4a9e5c 100%);
+            padding: 100px 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 60px;
+            min-height: 85vh;
+        }
+        .hero-text { flex: 1; }
+        .hero-text .badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .hero-text h1 {
+            font-size: 3.2rem;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+        .hero-text h1 span { color: #a8e6b4; }
+        .hero-text p {
+            color: rgba(255,255,255,0.85);
+            font-size: 1.15rem;
+            line-height: 1.7;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+        .hero-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .stat { text-align: center; }
+        .stat .number { font-size: 1.8rem; font-weight: 800; color: white; }
+        .stat .label { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
+
+        /* UPLOAD CARD */
+        .upload-card {
+            flex: 1;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 480px;
+        }
+        .upload-card h2 {
+            color: #2d7a3a;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+        .upload-card p { color: #888; font-size: 0.9rem; margin-bottom: 25px; }
+        .upload-box {
+            border: 2px dashed #c8e6c9;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9fdf9;
+        }
+        .upload-box:hover { border-color: #2d7a3a; background: #f0faf0; }
+        .upload-box input { display: none; }
+        .upload-box .upload-icon { font-size: 3rem; margin-bottom: 12px; }
+        .upload-box .upload-text { color: #2d7a3a; font-weight: 600; margin-bottom: 5px; }
+        .upload-box .upload-sub { color: #aaa; font-size: 0.85rem; }
+        #preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            margin: 15px auto 0;
+            display: none;
+            border: 2px solid #c8e6c9;
+        }
+        .detect-btn {
+            width: 100%;
+            background: #2d7a3a;
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 1.05rem;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .detect-btn:hover { background: #1f5a2a; transform: translateY(-2px); }
+        .detect-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        #loading { display: none; text-align: center; margin: 15px 0; color: #2d7a3a; }
+        .spinner {
+            width: 35px; height: 35px;
+            border: 3px solid #c8e6c9;
+            border-top: 3px solid #2d7a3a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 8px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* PLANTS SECTION */
+        .section { padding: 80px 60px; }
+        .section-header { text-align: center; margin-bottom: 50px; }
+        .section-header .tag {
+            color: #2d7a3a;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        .section-header h2 { font-size: 2.2rem; color: #1a3a1f; margin-bottom: 12px; }
+        .section-header p { color: #777; font-size: 1rem; max-width: 500px; margin: 0 auto; }
+
+        .plants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .plant-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #e8f5e9;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .plant-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(45,122,58,0.15);
+            border-color: #2d7a3a;
+        }
+        .plant-card .emoji { font-size: 2.5rem; margin-bottom: 12px; }
+        .plant-card h3 { color: #1a3a1f; font-size: 1rem; margin-bottom: 8px; }
+        .plant-card p { color: #999; font-size: 0.8rem; line-height: 1.4; margin-bottom: 12px; }
+        .disease-count {
+            background: #e8f5e9;
+            color: #2d7a3a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* HOW IT WORKS */
+        .how-section {
+            background: #1a4a2e;
+            padding: 80px 60px;
+        }
+        .how-section .section-header .tag { color: #a8e6b4; }
+        .how-section .section-header h2 { color: white; }
+        .how-section .section-header p { color: rgba(255,255,255,0.6); }
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .step {
+            background: rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 30px 25px;
+            text-align: center;
+            max-width: 200px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        .step:hover { background: rgba(255,255,255,0.15); transform: translateY(-5px); }
+        .step .step-num {
+            background: #2d7a3a;
+            color: white;
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin: 0 auto 15px;
+            font-size: 0.9rem;
+        }
+        .step .step-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .step h3 { color: white; margin-bottom: 8px; font-size: 1rem; }
+        .step p { color: rgba(255,255,255,0.6); font-size: 0.85rem; line-height: 1.5; }
+
+        /* POLICIES PREVIEW */
+        .policies-preview {
+            background: #fff;
+            padding: 80px 60px;
+        }
+        .policies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .policy-card {
+            background: #f9fdf9;
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid #e8f5e9;
+            border-left: 4px solid #2d7a3a;
+            transition: all 0.3s;
+        }
+        .policy-card:hover { box-shadow: 0 10px 30px rgba(45,122,58,0.1); transform: translateY(-3px); }
+        .policy-card .policy-tag {
+            background: #e8f5e9;
+            color: #2d7a3a;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        .policy-card h3 { color: #1a3a1f; font-size: 1rem; margin-bottom: 8px; }
+        .policy-card p { color: #777; font-size: 0.88rem; line-height: 1.5; }
+        .view-all-btn {
+            display: block;
+            text-align: center;
+            margin: 40px auto 0;
+            background: #2d7a3a;
+            color: white;
+            padding: 14px 40px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            width: fit-content;
+            transition: all 0.3s;
+        }
+        .view-all-btn:hover { background: #1f5a2a; transform: translateY(-2px); }
+
+        /* FOOTER */
+        footer {
+            background: #1a3a1f;
+            padding: 40px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        footer .footer-logo { color: #4caf50; font-size: 1.3rem; font-weight: 700; }
+        footer p { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+        footer .footer-links { display: flex; gap: 20px; }
+        footer .footer-links a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem; }
+        footer .footer-links a:hover { color: #4caf50; }
+
+        /* RESULT MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 999;
+            overflow-y: auto;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            max-width: 950px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 { color: white; font-size: 1.5rem; }
+        .close-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.3s;
+        }
+        .close-btn:hover { background: rgba(255,255,255,0.2); }
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-card h3 { color: #2d7a3a; font-size: 1.1rem; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e8f5e9; }
+        .top-result { text-align: center; padding: 20px 0; }
+        .top-result .disease-name { font-size: 1.8rem; font-weight: 800; color: #1a3a1f; margin-bottom: 8px; }
+        .top-result .confidence-badge {
+            background: #e8f5e9;
+            color: #2d7a3a;
+            padding: 6px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1rem;
+            display: inline-block;
+        }
+        .bar-item { display: flex; align-items: center; margin-bottom: 14px; gap: 12px; }
+        .bar-label { flex: 1; color: #333; font-size: 0.9rem; }
+        .bar-wrap { flex: 2; background: #f0f0f0; border-radius: 20px; height: 10px; }
+        .bar-fill { height: 10px; border-radius: 20px; background: #2d7a3a; transition: width 1s; }
+        .bar-fill.second { background: #66bb6a; }
+        .bar-fill.third { background: #a5d6a7; }
+        .bar-pct { color: #2d7a3a; font-weight: 700; min-width: 50px; text-align: right; font-size: 0.9rem; }
+        .images-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        .img-box { text-align: center; }
+        .img-box p { color: #777; font-size: 0.85rem; margin-bottom: 8px; }
+        .img-box img { width: 240px; height: 240px; object-fit: cover; border-radius: 12px; border: 2px solid #e8f5e9; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .info-item { background: #f9fdf9; border-radius: 12px; padding: 16px; border-left: 3px solid #2d7a3a; }
+        .info-item.red { border-left-color: #ef5350; }
+        .info-item.blue { border-left-color: #42a5f5; }
+        .info-item.purple { border-left-color: #ab47bc; }
+        .info-item h4 { font-size: 0.8rem; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .info-item p { color: #333; font-size: 0.9rem; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">🌿 PlantDoc</div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="#plants">Plants</a>
+        <a href="#how">How it Works</a>
+        <a href="/policies">📋 Gov. Policies</a>
+        <a href="#upload" class="nav-btn">🔍 Detect Disease</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="upload">
+    <div class="hero-text">
+        <div class="badge">🤖 AI Powered • 99.5% Accuracy</div>
+        <h1>Detect Plant <span>Diseases</span> Instantly</h1>
+        <p>Upload a leaf image and our advanced AI model will identify the disease, show you exactly where it is, and provide treatment advice — in seconds.</p>
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="number">38</div>
+                <div class="label">Disease Classes</div>
+            </div>
+            <div class="stat">
+                <div class="number">14</div>
+                <div class="label">Plant Species</div>
+            </div>
+            <div class="stat">
+                <div class="number">99.5%</div>
+                <div class="label">Accuracy</div>
+            </div>
+            <div class="stat">
+                <div class="number">87K+</div>
+                <div class="label">Training Images</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="upload-card">
+        <h2>🔍 Analyze Your Plant</h2>
+        <p>Upload a clear photo of the affected leaf for best results</p>
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Click to upload or drag & drop</div>
+            <div class="upload-sub">JPG, PNG supported • Max 10MB</div>
+            <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+            <img id="preview" src="" alt="Preview">
+        </div>
+        <button class="detect-btn" id="predictBtn" onclick="predict()" disabled>
+            🔍 Detect Disease
+        </button>
+        <div id="loading">
+            <div class="spinner"></div>
+            <p style="color:#2d7a3a; font-size:0.9rem;">Analyzing your plant...</p>
+        </div>
+    </div>
+</div>
+
+<!-- PLANTS -->
+<div class="section" id="plants">
+    <div class="section-header">
+        <div class="tag">🌱 Supported Species</div>
+        <h2>14 Plants Covered</h2>
+        <p>Click on any plant to learn about diseases that affect it and how to treat them</p>
+    </div>
+    <div class="plants-grid">
+        {% for key, plant in plants.items() %}
+        <a href="/plant/{{ key }}" class="plant-card">
+            <div class="emoji">{{ plant.emoji }}</div>
+            <h3>{{ plant.name }}</h3>
+            <p>{{ plant.description[:55] }}...</p>
+            <span class="disease-count">{{ plant.diseases|length }} conditions</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how-section" id="how">
+    <div class="section-header">
+        <div class="tag">⚙️ Process</div>
+        <h2>How It Works</h2>
+        <p>Get disease diagnosis in 4 simple steps</p>
+    </div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-icon">📸</div>
+            <h3>Upload</h3>
+            <p>Take a clear photo of the affected leaf and upload it</p>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-icon">🧠</div>
+            <h3>AI Analysis</h3>
+            <p>EfficientNet-B3 model analyzes with 99.5% accuracy</p>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-icon">🔥</div>
+            <h3>Grad-CAM</h3>
+            <p>See exactly which part of the leaf the AI focused on</p>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-icon">💊</div>
+            <h3>Treatment</h3>
+            <p>Get symptoms, causes, treatment and prevention advice</p>
+        </div>
+    </div>
+</div>
+
+<!-- POLICIES PREVIEW -->
+<div class="policies-preview">
+    <div class="section-header">
+        <div class="tag">🇮🇳 Government Support</div>
+        <h2>Indian Farming Policies</h2>
+        <p>Key government schemes and subsidies available for Indian farmers</p>
+    </div>
+    <div class="policies-grid">
+        <div class="policy-card">
+            <span class="policy-tag">💰 Income Support</span>
+            <h3>PM-KISAN</h3>
+            <p>₹6,000 per year direct income support to small and marginal farmers in 3 installments.</p>
+        </div>
+        <div class="policy-card">
+            <span class="policy-tag">🛡️ Insurance</span>
+            <h3>PMFBY</h3>
+            <p>Pradhan Mantri Fasal Bima Yojana — crop insurance against natural calamities at low premiums.</p>
+        </div>
+        <div class="policy-card">
+            <span class="policy-tag">💧 Irrigation</span>
+            <h3>PM Krishi Sinchai Yojana</h3>
+            <p>Ensures water access to every farm with focus on drip and sprinkler irrigation systems.</p>
+        </div>
+        <div class="policy-card">
+            <span class="policy-tag">🌱 Organic</span>
+            <h3>Paramparagat Krishi Vikas</h3>
+            <p>Promotes organic farming with financial assistance of ₹50,000 per hectare over 3 years.</p>
+        </div>
+    </div>
+    <a href="/policies" class="view-all-btn">View All Government Policies →</a>
+</div>
+
+<footer>
+    <div class="footer-logo">🌿 PlantDoc</div>
+    <p>AI Powered Plant Disease Detection | Built with EfficientNet-B3 & Flask</p>
+    <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="#plants">Plants</a>
+        <a href="/policies">Policies</a>
+        <a href="https://github.com/genocide-dj/Plant-Disease-Detector" target="_blank">GitHub</a>
+    </div>
+</footer>
+
+<!-- RESULT MODAL -->
+<div class="modal" id="resultModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🔬 Detection Results</h2>
+            <button class="close-btn" onclick="closeModal()">✕ Close</button>
+        </div>
+
+        <div class="modal-card">
+            <h3>🏆 Top Detection</h3>
+            <div class="top-result">
+                <div class="disease-name" id="topPrediction"></div>
+                <div class="confidence-badge" id="topConfidence"></div>
+            </div>
+        </div>
+
+        <div class="modal-card">
+            <h3>📊 Top 3 Predictions</h3>
+            <div id="predictionBars"></div>
+        </div>
+
+        <div class="modal-card">
+            <h3>🔥 Grad-CAM Heatmap</h3>
+            <div class="images-row">
+                <div class="img-box">
+                    <p>Original Image</p>
+                    <img id="originalImg" src="" alt="Original">
+                </div>
+                <div class="img-box">
+                    <p>AI Focus Area</p>
+                    <img id="gradcamImg" src="" alt="Grad-CAM">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-card">
+            <h3>📋 Disease Details</h3>
+            <div class="info-grid">
+                <div class="info-item red">
+                    <h4>🔴 Symptoms</h4>
+                    <p id="symptoms"></p>
+                </div>
+                <div class="info-item">
+                    <h4>⚠️ Cause</h4>
+                    <p id="cause"></p>
+                </div>
+                <div class="info-item blue">
+                    <h4>💊 Treatment</h4>
+                    <p id="treatment"></p>
+                </div>
+                <div class="info-item purple">
+                    <h4>🛡️ Prevention</h4>
+                    <p id="prevention"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let uploadedFile = null;
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        uploadedFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('preview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('originalImg').src = e.target.result;
+            document.getElementById('predictBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function predict() {
+        if (!uploadedFile) return;
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('predictBtn').disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+
+        try {
+            const response = await fetch('/predict', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            document.getElementById('topPrediction').textContent = data.predictions[0].display_name;
+            document.getElementById('topConfidence').textContent = `${data.predictions[0].confidence}% Confidence`;
+
+            const bars = document.getElementById('predictionBars');
+            bars.innerHTML = '';
+            const fillClasses = ['', 'second', 'third'];
+            data.predictions.forEach((p, i) => {
+                bars.innerHTML += `
+                    <div class="bar-item">
+                        <span class="bar-label">${p.display_name}</span>
+                        <div class="bar-wrap">
+                            <div class="bar-fill ${fillClasses[i]}" style="width:${p.confidence}%"></div>
+                        </div>
+                        <span class="bar-pct">${p.confidence}%</span>
+                    </div>`;
+            });
+
+            document.getElementById('gradcamImg').src = 'data:image/jpeg;base64,' + data.gradcam;
+            document.getElementById('symptoms').textContent = data.disease_info.symptoms;
+            document.getElementById('cause').textContent = data.disease_info.cause;
+            document.getElementById('treatment').textContent = data.disease_info.treatment;
+            document.getElementById('prevention').textContent = data.disease_info.prevention;
+
+            document.getElementById('resultModal').style.display = 'block';
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('predictBtn').disabled = false;
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('resultModal').style.display = 'none';
+    }
+</script>
+</body>
+</html>

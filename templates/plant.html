@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ plant.name }} - PlantDoc 🌿</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a1f0a; color: #e0f0e0; }
+
+        nav {
+            background: #1a3a1a;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2d6a2d;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav .logo { color: #4caf50; font-size: 1.4rem; font-weight: bold; text-decoration:none; }
+        nav .nav-links a {
+            color: #a5d6a7;
+            text-decoration: none;
+            margin-left: 25px;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+        nav .nav-links a:hover { color: #4caf50; }
+
+        .hero {
+            background: linear-gradient(180deg, #1a3a1a 0%, #0a1f0a 100%);
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .hero .emoji { font-size: 5rem; margin-bottom: 15px; }
+        .hero h1 { font-size: 2.5rem; color: #4caf50; margin-bottom: 15px; }
+        .hero p { color: #a5d6a7; font-size: 1.1rem; max-width: 600px; margin: 0 auto 20px; }
+        .back-btn {
+            display: inline-block;
+            background: #2d6a2d;
+            color: #a5d6a7;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        .back-btn:hover { background: #4caf50; color: white; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 20px; }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #4caf50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .diseases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .disease-card {
+            background: #1a3a1a;
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid #2d6a2d;
+            transition: all 0.3s;
+        }
+        .disease-card:hover { border-color: #4caf50; transform: translateY(-3px); }
+        .disease-card.healthy { border-left: 4px solid #4caf50; }
+        .disease-card.diseased { border-left: 4px solid #ff7043; }
+
+        .disease-card h3 {
+            font-size: 1.2rem;
+            color: #4caf50;
+            margin-bottom: 15px;
+        }
+        .disease-card.diseased h3 { color: #ff8a65; }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+        .info-row .label {
+            font-size: 0.8rem;
+            color: #81c784;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .info-row p {
+            color: #c8e6c9;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .healthy-badge {
+            background: #2d6a2d;
+            color: #81c784;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .disease-badge {
+            background: #4e1f0f;
+            color: #ff8a65;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        footer {
+            background: #1a3a1a;
+            text-align: center;
+            padding: 20px;
+            color: #a5d6a7;
+            border-top: 1px solid #2d6a2d;
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="logo">🌿 PlantDoc</a>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/#plants">Plants</a>
+        <a href="/#how">How it Works</a>
+    </div>
+</nav>
+
+<div class="hero">
+    <div class="emoji">{{ plant.emoji }}</div>
+    <h1>{{ plant.name }}</h1>
+    <p>{{ plant.description }}</p>
+    <a href="/" class="back-btn">← Back to Home</a>
+</div>
+
+<div class="container">
+    <h2 class="section-title">🦠 Diseases & Conditions</h2>
+    <div class="diseases-grid">
+        {% for class_name, disease in plant.diseases.items() %}
+        <div class="disease-card {% if 'healthy' in disease.name.lower() %}healthy{% else %}diseased{% endif %}">
+            {% if 'healthy' in disease.name.lower() %}
+                <span class="healthy-badge">✅ Healthy</span>
+            {% else %}
+                <span class="disease-badge">⚠️ Disease</span>
+            {% endif %}
+            <h3>{{ disease.name }}</h3>
+
+            <div class="info-row">
+                <div class="label">🔴 Symptoms</div>
+                <p>{{ disease.symptoms }}</p>
+            </div>
+
+            {% if 'healthy' not in disease.name.lower() %}
+            <div class="info-row">
+                <div class="label">⚠️ Cause</div>
+                <p>{{ disease.cause }}</p>
+            </div>
+            <div class="info-row">
+                <div class="label">💊 Treatment</div>
+                <p>{{ disease.treatment }}</p>
+            </div>
+            <div class="info-row">
+                <div class="label">🛡️ Prevention</div>
+                <p>{{ disease.prevention }}</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<footer>
+    <p>🌿 PlantDoc — AI Powered Plant Disease Detection | Built with EfficientNet-B3 & Flask</p>
+</footer>
+
+</body>
+</html>
